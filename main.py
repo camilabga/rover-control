@@ -4,10 +4,10 @@ from functions import plot
 J = 0.0002
 K = 0.04
 
-tf = 100 * 1000 ### tempo em ms
+tf = 100  ### tempo em seg
 
-_lambda = 100
-Wd = 50
+_lambda = 0.1
+Wd = 25
 Ud = 0
 Uv = 0
 w0 = 0
