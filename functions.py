@@ -26,31 +26,36 @@ def rungeKutta(w0, dt, Uv, Ud, K, i, J):
 def generate_values(tf, W, Wd, _lambda, J, K, Ud, Uv):
     _w = [W]
     _e = []
+    _i = []
     for t in range(tf*1000-1):
         e = W - Wd
         _e.append(e)  ### save the error to plot later
         i = J * (-1 * _lambda * e) / K  ### calculates the current
+        _i.append(i)
         W = rungeKutta(W, 0.001, Uv, Ud, K, i, J)
         _w.append(W)  ### saves in a list the next value of w
     _e.append(W - Wd)
-    return _w, _e
+    _i.append(J * (-1 * _lambda * e) / K)
+    return _w, _e, _i
 
-def plot(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
+def plot_dinamic(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
     # General plot parameters
     mpl.rcParams['font.family'] = 'DejaVu Sans'
     mpl.rcParams['font.size'] = 18
     mpl.rcParams['axes.linewidth'] = 2
     mpl.rcParams['axes.spines.top'] = False
     mpl.rcParams['axes.spines.right'] = False
-    mpl.rcParams['xtick.major.size'] = 10
+    mpl.rcParams['xtick.major.size'] = 5
     mpl.rcParams['xtick.major.width'] = 2
-    mpl.rcParams['ytick.major.size'] = 10
+    mpl.rcParams['ytick.major.size'] = 5
     mpl.rcParams['ytick.major.width'] = 2
 
     # Create figure and add axes
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111)
     fig.subplots_adjust(bottom=0.2, top=0.70)
+    ax.set_ylabel('W(rad/s)')
+    ax.set_xlabel('Tempo(s)')
 
     # Create axes for sliders
     ax_lambda = fig.add_axes([0.3, 0.85, 0.4, 0.05])
@@ -80,11 +85,23 @@ def plot(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
                  valinit=Uv0, valfmt='%f', facecolor='#cc7000')
 
     # Generate default data
-    _w, _e = generate_values(tf,w0,Wd0,lambda0,J,K, Ud0, Uv0)
+    _w, _e, _i = generate_values(tf,w0,Wd0,lambda0,J,K, Ud0, Uv0)
     # Plot default data
     _t = list(np.linspace(0,tf,1000*tf))
     f_d, = ax.plot(_t, _w, linewidth=2.5)
     wd_line, = ax.plot(_t, [Wd0]*len(_t), c='r',linewidth=2.5)
+
+    fig2 = plt.figure(figsize=(20, 20))
+    ax2 = fig2.add_subplot(111)
+    f_d2, = ax2.plot(_t, _e, linewidth=2.5)
+    ax2.set_ylabel('Erro (rad/s)')
+    ax2.set_xlabel('Tempo(s)')
+
+    fig3 = plt.figure(figsize=(20, 20))
+    ax3 = fig3.add_subplot(111)
+    f_d3, = ax3.plot(_t, _i, linewidth=2.5)
+    ax3.set_ylabel('Corrente i (A)')
+    ax3.set_xlabel('Tempo(s)')
 
     # Update values
     def update(val):
@@ -93,15 +110,106 @@ def plot(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
         Ud = s_Ud.val
         Uv = s_Uv.val
 
-        _w, _e = generate_values(tf, w0, Wd, _lambda, J, K, Ud, Uv)
+        _w, _e, _i = generate_values(tf, w0, Wd, _lambda, J, K, Ud, Uv)
 
         wd_line.set_data(_t, [Wd]*len(_t))
         f_d.set_data(_t,_w)
+        f_d2.set_data(_t,_e)
+        f_d3.set_data(_t, _i)
         fig.canvas.draw_idle()
+        fig2.canvas.draw_idle()
+        fig3.canvas.draw_idle()
 
     s_lambda.on_changed(update)
     s_Uv.on_changed(update)
     s_Ud.on_changed(update)
     s_Wd.on_changed(update)
+
+    plt.show()
+
+def plot_series(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
+    # General plot parameters
+    mpl.rcParams['font.family'] = 'Avenir'
+    mpl.rcParams['font.size'] = 18
+    mpl.rcParams['axes.linewidth'] = 2
+    mpl.rcParams['axes.spines.top'] = False
+    mpl.rcParams['axes.spines.right'] = False
+    mpl.rcParams['xtick.major.size'] = 10
+    mpl.rcParams['xtick.major.width'] = 2
+    mpl.rcParams['ytick.major.size'] = 10
+    mpl.rcParams['ytick.major.width'] = 2
+
+    # Create figure and add axes
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(111)
+
+    # Get colors from coolwarm colormap
+    colors = plt.get_cmap('coolwarm', 10)
+
+    lambda_values = [0.1, 0.2, 0.3, 0.4, 0.5, 1, 2, 3, 4, 5]
+
+    for i in range(len(lambda_values)):
+        _t = list(np.linspace(0, tf, 1000 * tf))
+        _w, _e, _i = generate_values(tf, w0, Wd0, lambda_values[i], J, K, Ud0, Uv0)
+        ax.plot(_t, _w, color=colors(i), linewidth=2.5)
+
+    wd_line, = ax.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+
+    # Add legend
+    labels = ['Lambda = 0.1', 'Lambda = 0.2', 'Lambda = 0.3', 'Lambda = 0.4',
+              'Lambda = 0.5', 'Lambda = 1', 'Lambda = 2', 'Lambda = 3',
+              'Lambda = 4', 'Lambda = 5']
+    ax.legend(labels, loc='lower right',
+              frameon=False, labelspacing=0.2)
+    ax.set_ylabel('W(rad/s)')
+    ax.set_xlabel('Tempo(s)')
+
+    ### Ud
+
+    fig1 = plt.figure(figsize=(6, 4))
+    ax1 = fig1.add_subplot(111)
+
+    ud_values = [0, 0.0001, 0.0005, 0.001]
+
+    for i in range(len(ud_values)):
+        _t = list(np.linspace(0, tf, 1000 * tf))
+        _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, ud_values[i], Uv0)
+        ax1.plot(_t, _w, color=colors(i), linewidth=2.5)
+
+    wd_line, = ax1.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+
+    # Add legend
+    labels = ['Ud = 0', 'Ud = 0.0001', 'Ud = 0.0005',
+              'Ud = 0.001']
+    ax1.legend(labels, loc='lower right',
+              frameon=False, labelspacing=0.2)
+    ax1.set_ylabel('W(rad/s)')
+    ax1.set_xlabel('Tempo(s)')
+
+    ### Uv
+
+    fig2 = plt.figure(figsize=(6, 4))
+    ax2 = fig2.add_subplot(111)
+
+    uv_values = [0, 0.00001, 0.00005, 0.0001]
+
+    for i in range(len(uv_values)):
+        _t = list(np.linspace(0, tf, 1000 * tf))
+        _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, Ud0, uv_values[i])
+        ax2.plot(_t, _w, color=colors(i), linewidth=2.5)
+
+    wd_line, = ax2.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+
+    # Add legend
+    labels = ['Uv = 0', 'Uv = 0.00001', 'Uv = 0.00005',
+              'Uv = 0.0001']
+    ax2.legend(labels, loc='lower right',
+               frameon=False, labelspacing=0.2)
+    ax2.set_ylabel('W(rad/s)')
+    ax2.set_xlabel('Tempo(s)')
+
+    ax.title.set_text("Comportamento do controle da velocidade angular com a variação de Lambda")
+    ax1.title.set_text("Comportamento do controle da velocidade angular com a variação de Ud")
+    ax2.title.set_text("Comportamento do controle da velocidade angular com a variação de Uv")
 
     plt.show()
