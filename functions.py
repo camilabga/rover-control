@@ -23,19 +23,28 @@ def rungeKutta(w0, dt, Uv, Ud, K, i, J):
 
     return w
 
-def generate_values(tf, W, Wd, _lambda, J, K, Ud, Uv):
-    _w = [W]
+def generate_values(tf, W, Wd, _lambda, J, K, Ud, Uv, n=1):
+    _w = []
     _e = []
     _i = []
-    for t in range(tf*1000-1):
-        e = W - Wd
-        _e.append(e)  ### save the error to plot later
+    t = tf*1000-1
+    e = W - Wd
+    i = J * (-1 * _lambda * e) / K
+    while t > 0:
+        for f in range(n):
+            _w.append(W)  ### saves in a list the next value of w
+            _e.append(e)  ### save the error to plot later
+            _i.append(i)
+            W = rungeKutta(W, 0.001, Uv, Ud, K, i, J)
+            e = W - Wd
+            t = t - 1
+            if t < 0:
+                break
         i = J * (-1 * _lambda * e) / K  ### calculates the current
-        _i.append(i)
-        W = rungeKutta(W, 0.001, Uv, Ud, K, i, J)
-        _w.append(W)  ### saves in a list the next value of w
-    _e.append(W - Wd)
-    _i.append(J * (-1 * _lambda * e) / K)
+    if n == 1:
+        _w.append(W)
+        _e.append(W - Wd)
+        _i.append(J * (-1 * _lambda * e) / K)
     return _w, _e, _i
 
 def plot_dinamic(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
@@ -151,17 +160,17 @@ def plot_series(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
     for i in range(len(lambda_values)):
         _t = list(np.linspace(0, tf, 1000 * tf))
         _w, _e, _i = generate_values(tf, w0, Wd0, lambda_values[i], J, K, Ud0, Uv0)
-        ax.plot(_t, _w, color=colors(i), linewidth=2.5)
+        ax.plot(_t, _i, color=colors(i), linewidth=2.5)
 
-    wd_line, = ax.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+    # wd_line, = ax.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
 
     # Add legend
     labels = ['Lambda = 0.1', 'Lambda = 0.2', 'Lambda = 0.3', 'Lambda = 0.4',
               'Lambda = 0.5', 'Lambda = 1', 'Lambda = 2', 'Lambda = 3',
               'Lambda = 4', 'Lambda = 5']
-    ax.legend(labels, loc='lower right',
+    ax.legend(labels, loc='upper right',
               frameon=False, labelspacing=0.2)
-    ax.set_ylabel('W(rad/s)')
+    ax.set_ylabel('Corrente (A)')
     ax.set_xlabel('Tempo(s)')
 
     ### Ud
@@ -174,16 +183,16 @@ def plot_series(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
     for i in range(len(ud_values)):
         _t = list(np.linspace(0, tf, 1000 * tf))
         _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, ud_values[i], Uv0)
-        ax1.plot(_t, _w, color=colors(i), linewidth=2.5)
+        ax1.plot(_t, _i, color=colors(i), linewidth=2.5)
 
-    wd_line, = ax1.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+    # wd_line, = ax1.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
 
     # Add legend
     labels = ['Ud = 0', 'Ud = 0.0001', 'Ud = 0.0005',
               'Ud = 0.001']
-    ax1.legend(labels, loc='lower right',
+    ax1.legend(labels, loc='upper right',
               frameon=False, labelspacing=0.2)
-    ax1.set_ylabel('W(rad/s)')
+    ax1.set_ylabel('Corrente (A)')
     ax1.set_xlabel('Tempo(s)')
 
     ### Uv
@@ -196,20 +205,62 @@ def plot_series(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K):
     for i in range(len(uv_values)):
         _t = list(np.linspace(0, tf, 1000 * tf))
         _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, Ud0, uv_values[i])
-        ax2.plot(_t, _w, color=colors(i), linewidth=2.5)
+        ax2.plot(_t, _i, color=colors(i), linewidth=2.5)
 
-    wd_line, = ax2.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+    # wd_line, = ax2.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
 
     # Add legend
     labels = ['Uv = 0', 'Uv = 0.00001', 'Uv = 0.00005',
               'Uv = 0.0001']
-    ax2.legend(labels, loc='lower right',
+    ax2.legend(labels, loc='upper right',
                frameon=False, labelspacing=0.2)
-    ax2.set_ylabel('W(rad/s)')
+    ax2.set_ylabel('Corrente (A)')
     ax2.set_xlabel('Tempo(s)')
 
-    ax.title.set_text("Comportamento do controle da velocidade angular com a variação de Lambda")
-    ax1.title.set_text("Comportamento do controle da velocidade angular com a variação de Ud")
-    ax2.title.set_text("Comportamento do controle da velocidade angular com a variação de Uv")
+    ax.title.set_text("Comportamento da corrente com a variação de Lambda")
+    ax1.title.set_text("Comportamento da corrente com a variação de Ud")
+    ax2.title.set_text("Comportamento da corrente com a variação de Uv")
 
     plt.show()
+
+def plot_frequency(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K, n):
+    # General plot parameters
+    mpl.rcParams['font.family'] = 'Avenir'
+    mpl.rcParams['font.size'] = 18
+    mpl.rcParams['axes.linewidth'] = 2
+    mpl.rcParams['axes.spines.top'] = False
+    mpl.rcParams['axes.spines.right'] = False
+    mpl.rcParams['xtick.major.size'] = 10
+    mpl.rcParams['xtick.major.width'] = 2
+    mpl.rcParams['ytick.major.size'] = 10
+    mpl.rcParams['ytick.major.width'] = 2
+
+    # Create figure and add axes
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(111)
+
+    # Get colors from coolwarm colormap
+    colors = plt.get_cmap('coolwarm', 10)
+
+    n_values = [1, 10, 100, 500, 1000, 2000, 2500, 5000]#, 7500, 10000, 15000]
+
+    for i in range(len(n_values)):
+        _t = list(np.linspace(0, tf, 1000 * tf))
+        _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, Ud0, Uv0, n_values[i])
+        ax.plot(_t, _w, color=colors(i), linewidth=2.5)
+
+    wd_line, = ax.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
+
+    # Add legend
+    labels = ['n = 1x', 'n = 10x', 'n = 100x', 'n = 500x',
+              'n = 1000x', 'n = 2000x', 'n = 2500x', 'n = 5000x']
+    ax.legend(labels, loc='upper right',
+              frameon=False, labelspacing=0.2)
+    ax.set_ylabel('Velocidade angular (Rad/s)')
+    ax.set_xlabel('Tempo(s)')
+
+    ax.title.set_text("Comportamento da velocidade angular com a variação da frequência da ação de controle (n)")
+
+    plt.show()
+
+    return 0
