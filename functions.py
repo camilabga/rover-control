@@ -236,11 +236,14 @@ def plot_frequency(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K, n):
     mpl.rcParams['ytick.major.width'] = 2
 
     # Create figure and add axes
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(12, 8))
     ax = fig.add_subplot(111)
 
+    fig1 = plt.figure(figsize=(12, 8))
+    ax1 = fig1.add_subplot(111)
+
     # Get colors from coolwarm colormap
-    colors = plt.get_cmap('coolwarm', 10)
+    colors = plt.get_cmap('coolwarm', 8)
 
     n_values = [1, 10, 100, 500, 1000, 2000, 2500, 5000]#, 7500, 10000, 15000]
 
@@ -248,6 +251,7 @@ def plot_frequency(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K, n):
         _t = list(np.linspace(0, tf, 1000 * tf))
         _w, _e, _i = generate_values(tf, w0, Wd0, lambda0, J, K, Ud0, Uv0, n_values[i])
         ax.plot(_t, _w, color=colors(i), linewidth=2.5)
+        ax1.plot(_t, _i, color=colors(i), linewidth=2.5)
 
     wd_line, = ax.plot(_t, [Wd0] * len(_t), c='r', linewidth=2.5)
 
@@ -260,7 +264,17 @@ def plot_frequency(lambda0, w0, Wd0, Ud0, Uv0, tf, J, K, n):
     ax.set_xlabel('Tempo(s)')
 
     ax.title.set_text("Comportamento da velocidade angular com a variação da frequência da ação de controle (n)")
+    ax1.title.set_text("Comportamento da corrente com a variação da frequência da ação de controle (n)")
+
+    ax1.legend(labels, loc='upper right',
+               frameon=False, labelspacing=0.2)
+    ax1.set_ylabel('Corrente (A)')
+    ax1.set_xlabel('Tempo(s)')
+
 
     plt.show()
 
     return 0
+
+
+
